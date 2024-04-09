@@ -22,8 +22,23 @@ class Barrel(BaseModel):
 @router.post("/deliver/{order_id}")
 def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     """ """
+    totGreenML = 0
+    totGold = 0
     print(f"barrels delievered: {barrels_delivered} order_id: {order_id}")
+    with db.engine.begin() as connection:
+        currGreenML = connection.execute(sqlalchemy.text("SELECT from num_green_ml from global_inventory")).scalar()
+        currGold = connection.execute(sqlalchemy.text("SELECT from gold from global_inventory")).scalar()
+    
+        for Barrel in barrels_delivered:
+            totGreenML += (Barrel.quantity * Barrel.ml_per_barrel)
+            totGold += (Barrel.quantity * Barrel.price)
 
+        currGreenML += totGreenML
+        currGold -= totGold
+
+        with engine.begin() as connection:
+            connection.execute(sqlalchemy.text(
+                f"UPDATE global_inventory SET gold = {currGold}, num_green_ml = {currGreenML}"))
     return "OK"
 
 # Gets called once a day
@@ -31,11 +46,16 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
 def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """ """
     print(wholesale_catalog)
+    wantGreenBarrels = 0
+    with db.engine.begin() as connection:
+        numGreenPotion = connection.execute(sqlalchemy.text("SELECT from num_green_potions from global_inventory")).scalar
+        if (numGreenPotion < 10):
+            wantGreenBarrels = 1
 
     return [
         {
-            "sku": "SMALL_RED_BARREL",
-            "quantity": 1,
+            "sku": "SMALL_GREEN_BARREL",
+            "quantity": wantGreenBarrels,
         }
     ]
 
