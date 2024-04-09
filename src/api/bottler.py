@@ -34,7 +34,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
         currGreenML -= totGreenML
         currGreenPot += newGreenPot
 
-        with engine.begin() as connection:
+        with db.engine.begin() as connection:
             connection.execute(sqlalchemy.text(
                 f"UPDATE global_inventory SET num_green_ml = {currGreenML}, num_green_potions = {currGreenPot}"))
     return "OK"
@@ -52,7 +52,7 @@ def get_bottle_plan():
     # Initial logic: bottle all barrels into red potions.
 
     bottleToBarrel = 0
-    with engine.begin() as connection:
+    with db.engine.begin() as connection:
         currGreenML = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar()
 
         while currGreenML >= 100:

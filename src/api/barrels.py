@@ -36,7 +36,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
         currGreenML += totGreenML
         currGold -= totGold
 
-        with engine.begin() as connection:
+        with db.engine.begin() as connection:
             connection.execute(sqlalchemy.text(
                 f"UPDATE global_inventory SET gold = {currGold}, num_green_ml = {currGreenML}"))
     return "OK"
