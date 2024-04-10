@@ -29,9 +29,9 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
         currGreenML = connection.execute(sqlalchemy.text("SELECT from num_green_ml from global_inventory")).scalar()
         currGold = connection.execute(sqlalchemy.text("SELECT from gold from global_inventory")).scalar()
     
-        for Barrel in barrels_delivered:
-            totGreenML += (Barrel.quantity * Barrel.ml_per_barrel)
-            totGold += (Barrel.quantity * Barrel.price)
+        for barrel in barrels_delivered:
+            totGreenML += (barrel.quantity * barrel.ml_per_barrel)
+            totGold += (barrel.quantity * barrel.price)
 
         currGreenML += totGreenML
         currGold -= totGold
@@ -53,10 +53,13 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
             wantGreenBarrels = 1
         else:
             return []
-            
+
+    for barrel in wholesale_catalog:
+        if barrel.potion_type == [0, 100, 0, 0]:
+            sku = barrel.sku
     return [
         {
-            "sku": wholesale_catalog[Barrel].sku,
+            "sku": sku,
             "quantity": wantGreenBarrels,
         }
     ]
