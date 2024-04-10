@@ -54,14 +54,9 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         else:
             return []
             
-        i = 0
-    for barrel in wholesale_catalog:
-        if wholesale_catalog[i].potion_type == [0, 100, 0, 0]:
-            newSku = wholesale_catalog[i].sku
-        i += 1 
     return [
         {
-            "sku": newSku,
+            "sku": wholesale_catalog(Barrel).sku,
             "quantity": wantGreenBarrels,
         }
     ]

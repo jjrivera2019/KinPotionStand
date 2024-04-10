@@ -58,6 +58,9 @@ def get_bottle_plan():
         while currGreenML >= 100:
             bottleToBarrel += 1 
             currGreenML -= 100
+        
+        if bottleToBarrel == 0:
+            return []
 
     return [
             {
