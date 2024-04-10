@@ -16,7 +16,7 @@ def get_catalog():
         if currGreenPots > 0:
             currGreenPots = 1
         else:
-            currGreenPots = 0
+            return []
     
 
 
@@ -26,6 +26,6 @@ def get_catalog():
                 "name": "green potion",
                 "quantity": currGreenPots,
                 "price": 50,
-                "potion_type": [0, 100, 0, 0],
+                "potion_type": [0, 100, 0, 0]
             }
         ]
