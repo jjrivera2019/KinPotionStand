@@ -26,8 +26,8 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     totGold = 0
     print(f"barrels delievered: {barrels_delivered} order_id: {order_id}")
     with db.engine.begin() as connection:
-        currGreenML = connection.execute(sqlalchemy.text("SELECT from num_green_ml from global_inventory")).scalar()
-        currGold = connection.execute(sqlalchemy.text("SELECT from gold from global_inventory")).scalar()
+        currGreenML = connection.execute(sqlalchemy.text("SELECT num_green_ml from global_inventory")).scalar()
+        currGold = connection.execute(sqlalchemy.text("SELECT gold from global_inventory")).scalar()
     
         for barrel in barrels_delivered:
             totGreenML += (barrel.quantity * barrel.ml_per_barrel)
