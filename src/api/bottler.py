@@ -23,8 +23,8 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     print(f"potions delievered: {potions_delivered} order_id: {order_id}")
 
     with db.engine.begin() as connection:
-        currGreenML = connection.execute(sqlalchemy.text("SELECT from num_green_ml from global_inventory")).scalar()
-        currGreenPot = connection.execute(sqlalchemy.text("SELECT from num_green_potions from global_inventory")).scalar()
+        currGreenML = connection.execute(sqlalchemy.text("SELECT  num_green_ml from global_inventory")).scalar()
+        currGreenPot = connection.execute(sqlalchemy.text("SELECT  num_green_potions from global_inventory")).scalar()
     
         for pots in potions_delivered:
             if pots.potion_type == [0, 100, 0, 0]:
@@ -61,10 +61,10 @@ def get_bottle_plan():
         
         if bottleToBarrel == 0:
             return []
-
+    
     return [
             {
-                "potion_type": [0, 1, 0, 0],
+                "potion_type": [0, 100, 0, 0],
                 "quantity": bottleToBarrel,
             }
         ]

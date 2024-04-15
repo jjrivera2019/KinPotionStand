@@ -30,7 +30,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
         currGold = connection.execute(sqlalchemy.text("SELECT gold from global_inventory")).scalar()
     
         for barrel in barrels_delivered:
-            if (barrel.sku == "green"):
+            if (barrel.potion_type == [0, 1, 0, 0]):
                 totGreenML += (barrel.quantity * barrel.ml_per_barrel)
                 totGold += (barrel.quantity * barrel.price)
 
@@ -42,7 +42,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
                 f"UPDATE global_inventory SET gold = {currGold}"))
             
             connection.execute(sqlalchemy.text(
-                f"UPDATE global_inventory SET mum_green_ml = {currGreenML}"))
+                f"UPDATE global_inventory SET num_green_ml = {currGreenML}"))
 
     return "OK"
 
