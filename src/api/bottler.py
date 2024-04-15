@@ -55,7 +55,7 @@ def get_bottle_plan():
     with db.engine.begin() as connection:
         currGreenML = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar()
 
-        while currGreenML >= 100:
+        while (currGreenML >= 100):
             bottleToBarrel += 1 
             currGreenML -= 100
         
@@ -64,7 +64,7 @@ def get_bottle_plan():
 
     return [
             {
-                "potion_type": [0, 100, 0, 0],
+                "potion_type": [0, 1, 0, 0],
                 "quantity": bottleToBarrel,
             }
         ]
