@@ -40,6 +40,10 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
         with db.engine.begin() as connection:
             connection.execute(sqlalchemy.text(
                 f"UPDATE global_inventory SET gold = {currGold}"))
+            
+            connection.execute(sqlalchemy.text(
+                f"UPDATE global_inventory SET mum_green_ml = {currGreenML}"))
+
     return "OK"
 
 # Gets called once a day
