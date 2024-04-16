@@ -86,7 +86,19 @@ def post_visits(visit_id: int, customers: list[Customer]):
 @router.post("/")
 def create_cart(new_cart: Customer):
     """ """
-    return {"cart_id": 1}
+    with db.engine.begin() as connection:
+        #check if customer exists
+        c_name = "string"
+        c_class = "string"
+        result = connection.execute(sqlalchemy.text(f"SELECT customer_ID FROM customers WHERE name = {c_name} AND class = {c_class} AND level = {new_cart.level}")).scalar()
+        if not result:
+            connection.execute(
+                sqlalchemy.text(f"INSERT INTO customers (name, class, level) VALUES ({new_cart.customer_name}, {new_cart.character_class}, {new_cart.level})"))
+        # insert the new cart
+        connection.execute(
+            sqlalchemy.text(f"INSERT INTO Carts (customer_ID) VALUES {result})"))
+        cartID = connection.execute(sqlalchemy.text("SELECT cart_ID from carts"))
+    return {"cart_id": cartID}
 
 
 class CartItem(BaseModel):
@@ -96,7 +108,6 @@ class CartItem(BaseModel):
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     """ """
-
     return "OK"
 
 
@@ -106,7 +117,6 @@ class CartCheckout(BaseModel):
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
-
     with db.engine.begin() as connection:
         currGreenPots = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory")).scalar()
         currGold = connection.execute(sqlalchemy.text("SELECT gold FROM global_inventory")).scalar()
