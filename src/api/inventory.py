@@ -25,6 +25,7 @@ def get_inventory():
         currBlueML = connection.execute(sqlalchemy.text("SELECT num_blue_ml FROM global_inventory")).scalar()
 
         currGold = connection.execute(sqlalchemy.text("SELECT gold FROM global_inventory")).scalar()
+        
     return {"num_red_potions": currRedPots, "num_red_ml": currRedML, 
             "num_green_potions": currGreenPots, "num_green_ml": currGreenML, 
             "num_blue_potions": currBluePots, "num_blue_ml": currBlueML, 
