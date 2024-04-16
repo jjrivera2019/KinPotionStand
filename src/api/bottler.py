@@ -70,7 +70,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
                 f"UPDATE global_inventory SET num_green_ml = {currGreenML}, num_green_potions = {currGreenPot}"))
             
             connection.execute(sqlalchemy.text(
-                f"UPDATE global_inventory SET num_blue_ml = {currBlueML}, num_green_potions = {currBluePot}"))
+                f"UPDATE global_inventory SET num_blue_ml = {currBlueML}, num_blue_potions = {currBluePot}"))
     return "OK"
 
 @router.post("/plan")
@@ -96,21 +96,21 @@ def get_bottle_plan():
         currBlueML = connection.execute(sqlalchemy.text("SELECT num_blue_ml FROM global_inventory")).scalar()
 
         while (currRedML >= 100):
-            bottleToBarrel += 1 
+            bottleToRedBarrel += 1 
             currRedML -= 100
         
         while (currGreenML >= 100):
-            bottleToBarrel += 1 
+            bottleToGreenBarrel += 1 
             currGreenML -= 100
         
         while (currBlueML >= 100):
-            bottleToBarrel += 1 
+            bottleToBlueBarrel += 1 
             currBlueML -= 100
         
 
         if bottleToRedBarrel != 0:
             plan.append({
-                "potion_type": [0, 100, 0, 0],
+                "potion_type": [100, 0, 0, 0],
                 "quantity": bottleToRedBarrel,
             })
 
@@ -122,7 +122,7 @@ def get_bottle_plan():
 
         if bottleToBlueBarrel != 0:
             plan.append({
-                "potion_type": [0, 100, 0, 0],
+                "potion_type": [0, 0, 100, 0],
                 "quantity": bottleToBlueBarrel,
             })
     

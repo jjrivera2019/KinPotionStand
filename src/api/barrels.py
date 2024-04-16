@@ -55,7 +55,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
 
         with db.engine.begin() as connection:
             connection.execute(sqlalchemy.text(
-                f"UPDATE global_inventory SET gold = {currGold}, num_green_ml = {currGreenML},num_red_ml = {currRedML}, num_blue_ml = {currBlueML}"))
+                f"UPDATE global_inventory SET gold = {currGold}, num_green_ml = {currGreenML}, num_red_ml = {currRedML}, num_blue_ml = {currBlueML}"))
 
     return "OK"
 
@@ -73,8 +73,8 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         
         """ Switch potion priority under here """
         redPots = [1, 0, 0, 0]
-        greenPots = [1, 0, 0, 0]
-        bluePots = [1, 0, 0, 0]
+        greenPots = [0, 1, 0, 0]
+        bluePots = [0, 0, 1, 0]
 
         """ modify code under here """
         potion1Type = redPots
