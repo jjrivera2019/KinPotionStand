@@ -88,17 +88,30 @@ def create_cart(new_cart: Customer):
     """ """
     with db.engine.begin() as connection:
         #check if customer exists
-        c_name = "string"
-        c_class = "string"
-        result = connection.execute(sqlalchemy.text(f"SELECT customer_ID FROM customers WHERE name = {c_name} AND class = {c_class} AND level = {new_cart.level}")).scalar()
-        if not result:
-            connection.execute(
-                sqlalchemy.text(f"INSERT INTO customers (name, class, level) VALUES ({new_cart.customer_name}, {new_cart.character_class}, {new_cart.level})"))
-        # insert the new cart
-        connection.execute(
-            sqlalchemy.text(f"INSERT INTO Carts (customer_ID) VALUES {result})"))
-        cartID = connection.execute(sqlalchemy.text("SELECT cart_ID from carts"))
-    return {"cart_id": cartID}
+        customer_id = 0
+        
+        customer_id = connection.execute(sqlalchemy.text(
+            "SELECT customer_id FROM customers WHERE name = (:name) AND class = (:class) AND level = (:level)"), 
+            [{"name": new_cart.customer_name, "class": new_cart.character_class, "level": new_cart.level}])
+        
+        if customer_id is None:
+            connection.execute(sqlalchemy.text(
+                "INSERT INTO customers (name, class, level) VALUES (:name, :class, :level)"), 
+                [{"name": new_cart.customer_name, "class": new_cart.character_class, "level": new_cart.level}])
+                
+            customer_id = connection.execute(sqlalchemy.text(
+                "SELECT customer_id FROM customers WHERE name = (:name) AND class = (:class) AND level = (:level)"), 
+                [{"name": new_cart.customer_name, "class": new_cart.character_class, "level": new_cart.level}])
+
+        connection.execute(sqlalchemy.text(
+            "INSERT INTO carts (customer_id) VALUES (:customer_id)"), 
+            [{"customer_id": customer_id}])
+        
+        cart_id = connection.execute(sqlalchemy.text(
+            "SELECT cart_id FROM carts WHERE customer_id = (:customer_id) VALUES"), 
+            [{"customer_id": customer_id}])
+        
+    return {"cart_id": cart_id}
 
 
 class CartItem(BaseModel):
