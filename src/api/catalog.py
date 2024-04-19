@@ -19,7 +19,6 @@ def get_catalog():
     redQty = 1
     greenQty = 1
     blueQty = 1
-
     """ End of modification """
     cat = []
     with db.engine.begin() as connection:
@@ -27,13 +26,15 @@ def get_catalog():
         currGreenPots = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory")).scalar()
         currBluePots = connection.execute(sqlalchemy.text("SELECT num_blue_potions FROM global_inventory")).scalar()
 
+
+
         if currRedPots > 0:
             cat.append({
                 "sku": "RED_POTION",
                 "name": "red potion",
                 "quantity": redQty,
                 "price": redPrice,
-                "potion_type": [1, 0, 0, 0]
+                "potion_type": [100, 0, 0, 0]
             })
 
         if currGreenPots > 0:
@@ -42,7 +43,7 @@ def get_catalog():
                 "name": "green potion",
                 "quantity": greenQty,
                 "price": greenPrice,
-                "potion_type": [0, 1, 0, 0]
+                "potion_type": [0, 100, 0, 0]
             })
 
         if currBluePots > 0:
@@ -51,7 +52,7 @@ def get_catalog():
                 "name": "blue potion",
                 "quantity": blueQty,
                 "price": bluePrice,
-                "potion_type": [0, 0, 1, 0]
+                "potion_type": [0, 0, 100, 0]
             })
 
     return cat

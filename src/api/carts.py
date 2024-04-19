@@ -4,6 +4,7 @@ from src.api import auth
 from enum import Enum
 import sqlalchemy
 from src import database as db
+from datetime import date
 router = APIRouter(
     prefix="/carts",
     tags=["cart"],
@@ -78,6 +79,8 @@ def post_visits(visit_id: int, customers: list[Customer]):
     """
     Which customers visited the shop today?
     """
+    
+
     print(customers)
 
     return "OK"
@@ -88,31 +91,29 @@ def create_cart(new_cart: Customer):
     """ """
     with db.engine.begin() as connection:
         #check if customer exists
-        customer_id = 0
-        
+
         customer_id = connection.execute(sqlalchemy.text(
             "SELECT customer_id FROM customers WHERE name = (:name) AND class = (:class) AND level = (:level)"), 
-            [{"name": new_cart.customer_name, "class": new_cart.character_class, "level": new_cart.level}])
+            [{"name": new_cart.customer_name, "class": new_cart.character_class, "level": new_cart.level}]).scalar()
         
-        if customer_id is None:
+        if (customer_id is None):
             connection.execute(sqlalchemy.text(
                 "INSERT INTO customers (name, class, level) VALUES (:name, :class, :level)"), 
                 [{"name": new_cart.customer_name, "class": new_cart.character_class, "level": new_cart.level}])
                 
             customer_id = connection.execute(sqlalchemy.text(
                 "SELECT customer_id FROM customers WHERE name = (:name) AND class = (:class) AND level = (:level)"), 
-                [{"name": new_cart.customer_name, "class": new_cart.character_class, "level": new_cart.level}])
+                [{"name": new_cart.customer_name, "class": new_cart.character_class, "level": new_cart.level}]).scalar()
 
         connection.execute(sqlalchemy.text(
-            "INSERT INTO carts (customer_id) VALUES (:customer_id)"), 
+            "INSERT INTO carts (customer_id) VALUES (:customer_id) RETURNING customer_id"), 
             [{"customer_id": customer_id}])
         
         cart_id = connection.execute(sqlalchemy.text(
-            "SELECT cart_id FROM carts WHERE customer_id = (:customer_id) VALUES"), 
-            [{"customer_id": customer_id}])
-        
-    return {"cart_id": cart_id}
+            "SELECT cart_id FROM carts WHERE customer_id = (:customer_id)"), 
+            [{"customer_id": customer_id}]).scalar()
 
+    return {"cart_id": cart_id}
 
 class CartItem(BaseModel):
     quantity: int
