@@ -65,52 +65,22 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """ """
     print(wholesale_catalog)
 
+    plan = []
     with db.engine.begin() as connection:
-        numRedPotion = connection.execute(sqlalchemy.text("SELECT num_red_potions from global_inventory")).scalar()
-        numGreenPotion = connection.execute(sqlalchemy.text("SELECT num_green_potions from global_inventory")).scalar()
-        numBluePotion = connection.execute(sqlalchemy.text("SELECT num_blue_potions from global_inventory")).scalar()
-        bank = connection.execute(sqlalchemy.text("SELECT gold from global_inventory")).scalar()
+        gi = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory"))
+        potions = connection.execute(sqlalchemy.text("SELECT * FROM potions"))
+        for i in gi:
+            bank = i.gold
+            for potion in potions:
+                for barrel in wholesale_catalog:
+                    if ((barrel.potion_type == [potion.red, potion.green, potion.blue, potion.dark]) and 
+                        (potion.qty < potion.min) and barrel.quantity and (bank > barrel.price)):
+                        bank -= barrel.price 
+                        plan.append({
+                            "sku": barrel.sku,
+                            "quantity": 1,
+                        })
         
-        """ Switch potion priority under here """
-        redPots = [1, 0, 0, 0]
-        greenPots = [0, 1, 0, 0]
-        bluePots = [0, 0, 1, 0]
-
-        """ modify code under here """
-        potion1Type = redPots
-        potion2Type = greenPots
-        potion3Type = bluePots
-
-        numPotion1 = numRedPotion
-        numPotion2 = numGreenPotion
-        numPotion3 = numBluePotion
-
-        potion1min = 10
-        potion2min = 5
-        potion3min = 5
-
-        """ End of modification area """
-        plan = []
-        
-    for barrel in wholesale_catalog:
-        if ((barrel.potion_type == potion1Type) and (numPotion1 < potion1min) and barrel.quantity and (bank > barrel.price)):
-            bank -= barrel.price 
-            plan.append({
-                "sku": barrel.sku,
-                "quantity": 1,
-            })
-        elif ((barrel.potion_type == potion2Type) and (numPotion2 < potion2min) and barrel.quantity and (bank > barrel.price)):
-            bank -= barrel.price 
-            plan.append({
-                "sku": barrel.sku,
-                "quantity": 1,
-            })
-        elif ((barrel.potion_type == potion3Type) and (numPotion3 < potion3min) and barrel.quantity and (bank > barrel.price)):
-            bank -= barrel.price 
-            plan.append({
-                "sku": barrel.sku,
-                "quantity": 1,
-            })
 
     return plan
 
