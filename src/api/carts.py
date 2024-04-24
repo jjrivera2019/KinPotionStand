@@ -136,18 +136,17 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
         
         items = connection.execute(sqlalchemy.text("SELECT * FROM cart_items WHERE cart_id = :cart_id"),
                                    [{"cart_id": cart_id}])
-        for sku, gold in potions:
-            for qty, item_sku in items:
-                if item_sku == sku:
-                    
+        for potion in potions:
+            for item in items:
+                if item.item_sku == potion.sku:
                     connection.execute(sqlalchemy.text("UPDATE potions SET qty = potions.qty - :qty WHERE potions.sku = :potions_sku"),
-                                       [{"qty": qty, "potions_sku": item_sku}])
+                                       [{"qty": item.qty, "potions_sku": item.item_sku}])
                     
                     connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold = global_inventory.gold + :pot_gold"),
-                                       [{"pot_gold": gold}])
+                                       [{"pot_gold": potion.gold * item.qty}])
                     
-                    totalPots += qty
-                    totalGold += gold                    
+                    totalPots += item.qty
+                    totalGold += potion.gold * item.qty                   
 
         
     return {"total_potions_bought": totalPots, "total_gold_paid": totalGold}
