@@ -14,22 +14,52 @@ router = APIRouter(
 @router.get("/audit")
 def get_inventory():
     """ """
+    sql_statement = sqlalchemy.text(""" with
+                                        potions as (
+                                            SELECT
+                                            COALESCE(SUM(amount), 0) as potions
+                                            from
+                                            ledger
+                                            where
+                                            item = 'red'
+                                            or item = 'green'
+                                            or item = 'blue'
+                                            or item = 'white'
+                                            or item = 'cyan'
+                                            or item = 'purple'
+                                        ),
+                                        ml as (
+                                            SELECT
+                                            COALESCE(SUM(amount), 0) as ml
+                                            from
+                                            ledger
+                                            where
+                                            item = 'red_ml'
+                                            or item = 'green_ml'
+                                            or item = 'blue_ml'
+                                            or item = 'dark_ml'
+                                        ),
+                                        gold as(
+                                            SELECT
+                                            SUM(amount) as gold
+                                            from
+                                            ledger
+                                            where
+                                            item = 'gold'
+                                        )
+                                        select
+                                        *
+                                        from
+                                        potions,
+                                        ml, gold
+                                    """)
     with db.engine.begin() as connection:
-        currRedPots = connection.execute(sqlalchemy.text("SELECT num_red_potions FROM global_inventory")).scalar()
-        currRedML = connection.execute(sqlalchemy.text("SELECT num_red_ml FROM global_inventory")).scalar()
+        inventory = connection.execute(sql_statement)
+        for stuff in inventory:
         
-        currGreenPots = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory")).scalar()
-        currGreenML = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar()
-
-        currBluePots = connection.execute(sqlalchemy.text("SELECT num_blue_potions FROM global_inventory")).scalar()
-        currBlueML = connection.execute(sqlalchemy.text("SELECT num_blue_ml FROM global_inventory")).scalar()
-
-        currGold = connection.execute(sqlalchemy.text("SELECT gold FROM global_inventory")).scalar()
-        
-    return {"num_red_potions": currRedPots, "num_red_ml": currRedML, 
-            "num_green_potions": currGreenPots, "num_green_ml": currGreenML, 
-            "num_blue_potions": currBluePots, "num_blue_ml": currBlueML, 
-            "gold": currGold}
+            return {"num_of_potions": stuff.potions, 
+                    "ml_in_barrels": stuff.ml, 
+                    "gold": stuff.gold}
 
 # Gets called once a day
 @router.post("/plan")

@@ -114,6 +114,10 @@ class CartItem(BaseModel):
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     """ """
+    """ INSERT INTO cart_items (cart_id, quantity, catalog_id) 
+        SELECT :cart_id, :quantity, catalog.id 
+        FROM catalog WHERE catalog.sku = :item_sku """
+        
     with db.engine.begin() as connection:
         connection.execute(sqlalchemy.text(
             "INSERT INTO cart_items (cart_id, item_sku, qty) VALUES (:cart_id, :sku, :qty)"), 
@@ -132,9 +136,9 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     totalGold = 0
 
     with db.engine.begin() as connection:
-        potions = connection.execute(sqlalchemy.text("SELECT * FROM potions"))
+        potions = connection.execute(sqlalchemy.text("SELECT sku FROM potions"))
         
-        items = connection.execute(sqlalchemy.text("SELECT * FROM cart_items WHERE cart_id = :cart_id"),
+        items = connection.execute(sqlalchemy.text("SELECT item_sku,  FROM cart_items WHERE cart_id = :cart_id"),
                                    [{"cart_id": cart_id}])
         for potion in potions:
             for item in items:

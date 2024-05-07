@@ -3,6 +3,7 @@ from enum import Enum
 from pydantic import BaseModel
 from src.api import auth
 import sqlalchemy
+from sqlalchemy.sql import *
 from src import database as db
 
 router = APIRouter(
@@ -18,59 +19,35 @@ class PotionInventory(BaseModel):
 @router.post("/deliver/{order_id}")
 def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int):
     """ """
+    print(f"potions delivered: {potions_delivered} order_id: {order_id}")
+              
+    metadata_obj = sqlalchemy.MetaData()
+    ledger = sqlalchemy.Table("ledger", metadata_obj, autoload_with = db.engine)            
+    delete_zeros = delete(ledger).where(ledger.c.amount == 0)
     
-    totRedML = 0
-    newRedPot = 0
-
-    totGreenML = 0
-    newGreenPot = 0
-
-    totBlueML = 0
-    newBluePot = 0
-
-    print(f"potions delievered: {potions_delivered} order_id: {order_id}")
-
     with db.engine.begin() as connection:
-        currRedML = connection.execute(sqlalchemy.text("SELECT num_red_ml from global_inventory")).scalar()
-        currRedPot = connection.execute(sqlalchemy.text("SELECT num_red_potions from global_inventory")).scalar()
-    
-        currGreenML = connection.execute(sqlalchemy.text("SELECT num_green_ml from global_inventory")).scalar()
-        currGreenPot = connection.execute(sqlalchemy.text("SELECT num_green_potions from global_inventory")).scalar()
-    
-        currBlueML = connection.execute(sqlalchemy.text("SELECT num_blue_ml from global_inventory")).scalar()
-        currBluePot = connection.execute(sqlalchemy.text("SELECT num_blue_potions from global_inventory")).scalar()
-    
         for pots in potions_delivered:
-            if pots.potion_type == [100, 0, 0, 0]:
-                newRedPot += pots.quantity
-                totRedML += (pots.quantity * 100)
-                
-            if pots.potion_type == [0, 100, 0, 0]:
-                newGreenPot += pots.quantity
-                totGreenML += (pots.quantity * 100)
-                
-            if pots.potion_type == [0, 0, 100, 0]:
-                newBluePot += pots.quantity
-                totBlueML += (pots.quantity * 100)
-                
-        currRedML -= totRedML
-        currRedPot += newRedPot
-    
-        currGreenML -= totGreenML
-        currGreenPot += newGreenPot
-
-        currBlueML -= totBlueML
-        currBluePot += newBluePot
-
-        with db.engine.begin() as connection:
-            connection.execute(sqlalchemy.text(
-                f"UPDATE global_inventory SET num_red_ml = {currRedML}, num_red_potions = {currRedPot}"))
+            connection.execute(sqlalchemy.text("""INSERT INTO ledger (item, amount) VALUES
+                                                    (:red_ml, :red_ml_amount),
+                                                    (:green_ml, :green_ml_amount),
+                                                    (:blue_ml, :blue_ml_amount)"""), 
+                  [{"red_ml": "red_ml", "red_ml_amount":-(pots.quantity * pots.potion_type[0]),
+                    "green_ml": "green_ml", "green_ml_amount":-(pots.quantity * pots.potion_type[1]),
+                    "blue_ml": "blue_ml", "blue_ml_amount":-(pots.quantity * pots.potion_type[2])}])
             
-            connection.execute(sqlalchemy.text(
-                f"UPDATE global_inventory SET num_green_ml = {currGreenML}, num_green_potions = {currGreenPot}"))
+            catalog = connection.execute(sqlalchemy.text("""SELECT sku, gold FROM potions
+                                                  WHERE red = :red AND green = :green AND blue = :blue"""),
+                               [{"red": pots.potion_type[0], "green": pots.potion_type[1], "blue": pots.potion_type[2]}])
             
-            connection.execute(sqlalchemy.text(
-                f"UPDATE global_inventory SET num_blue_ml = {currBlueML}, num_blue_potions = {currBluePot}"))
+            for stuff in catalog:
+                connection.execute(sqlalchemy.text("""INSERT INTO ledger (item, amount) VALUES
+                                                  (:gold, :gold_amount),
+                                                  (:sku, :qty_amount)"""), 
+                  [{"gold": "gold", "gold_amount": -(stuff.gold * pots.quantity), 
+                    "sku": stuff.sku, "qty_amount": pots.quantity}])
+                
+        connection.execute(delete_zeros)
+            
     return "OK"
 
 @router.post("/plan")
@@ -85,47 +62,35 @@ def get_bottle_plan():
 
     # Initial logic: bottle all barrels into red potions.
 
-    bottleToRedBarrel = 0
-    bottleToGreenBarrel = 0
-    bottleToBlueBarrel = 0
+    curr_red_ml = 0
+    curr_green_ml = 0
+    curr_blue_ml = 0
+    curr_dark_ml = 0
 
     plan = []
     with db.engine.begin() as connection:
-        currRedML = connection.execute(sqlalchemy.text("SELECT num_red_ml FROM global_inventory")).scalar()
-        currGreenML = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar()
-        currBlueML = connection.execute(sqlalchemy.text("SELECT num_blue_ml FROM global_inventory")).scalar()
+        potions = connection.execute(sqlalchemy.text("SELECT qty, red, green, blue, dark, pot_min, pot_max FROM potions ORDER BY qty ASC"))
+        curr_red_ml = connection.execute(sqlalchemy.text("SELECT num_red_ml FROM global_inventory")).scalar()
+        curr_green_ml = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar()
+        curr_blue_ml = connection.execute(sqlalchemy.text("SELECT num_blue_ml FROM global_inventory")).scalar()
+        curr_dark_ml = connection.execute(sqlalchemy.text("SELECT num_dark_ml FROM global_inventory")).scalar()
+        """ select sum of ledger """
+        for potion in potions:
+            if (potion.qty < potion.pot_min and 
+               (curr_red_ml > potion.red * potion.pot_max - potion.qty) and 
+               (curr_green_ml > potion.green * potion.pot_max - potion.qty) and
+               (curr_blue_ml > potion.blue * potion.pot_max - potion.qty) and
+               (curr_dark_ml > potion.dark * potion.pot_max - potion.qty)):
+                
+                curr_red_ml = curr_red_ml - (potion.red * potion.pot_max - potion.qty)
+                curr_green_ml = curr_green_ml - (potion.green * potion.pot_max - potion.qty)
+                curr_blue_ml = curr_blue_ml - (potion.blue * potion.pot_max - potion.qty)
+                curr_dark_ml = curr_dark_ml - (potion.dark * potion.pot_max - potion.qty)
 
-        while (currRedML >= 100):
-            bottleToRedBarrel += 1 
-            currRedML -= 100
-        
-        while (currGreenML >= 100):
-            bottleToGreenBarrel += 1 
-            currGreenML -= 100
-        
-        while (currBlueML >= 100):
-            bottleToBlueBarrel += 1 
-            currBlueML -= 100
-        
-
-        if bottleToRedBarrel != 0:
-            plan.append({
-                "potion_type": [100, 0, 0, 0],
-                "quantity": bottleToRedBarrel,
-            })
-
-        if bottleToGreenBarrel != 0:
-            plan.append({
-                "potion_type": [0, 100, 0, 0],
-                "quantity": bottleToGreenBarrel,
-            })
-
-        if bottleToBlueBarrel != 0:
-            plan.append({
-                "potion_type": [0, 0, 100, 0],
-                "quantity": bottleToBlueBarrel,
-            })
-    
+                plan.append({
+                "potion_type": [potion.red, potion.green, potion.blue, potion.dark],
+                "quantity": potion.pot_max - potion.qty
+                })
     return plan
 
 if __name__ == "__main__":

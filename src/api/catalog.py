@@ -12,7 +12,7 @@ def get_catalog():
     """
     cat = []
     with db.engine.begin() as connection:    
-        rows = connection.execute(sqlalchemy.text("SELECT * FROM potions"))
+        rows = connection.execute(sqlalchemy.text("SELECT sku, name, gold, red, green, blue, dark FROM potions"))
 
         for row in rows:       
             if row.qty > 0:
