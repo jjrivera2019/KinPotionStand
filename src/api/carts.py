@@ -143,9 +143,19 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
         for potion in potions:
             for item in items:
                 if item.item_sku == potion.sku:
+                    """ insert potion and amount """
+                    connection.execute(sqlalchemy.text("""   INSERT INTO ledger 
+                                                             (item, amount)
+                                                             VALUES 
+                                                             (:potion, :potion_amount),
+                                                             (:gold, :gold_amount) """),
+                                       [{"potion": "potion_name", "potion_amount": "potion amount",
+                                         "gold": "gold", "gold_amount": -"potion_price* potion_amount"}])
+                    
                     connection.execute(sqlalchemy.text("UPDATE potions SET qty = potions.qty - :qty WHERE potions.sku = :potions_sku"),
                                        [{"qty": item.qty, "potions_sku": item.item_sku}])
                     
+                    """ insert gold and amount """
                     connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold = global_inventory.gold + :pot_gold"),
                                        [{"pot_gold": potion.gold * item.qty}])
                     

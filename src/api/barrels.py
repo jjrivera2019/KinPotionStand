@@ -19,10 +19,16 @@ class Barrel(BaseModel):
 
     quantity: int
 
+potion_type_to_color = {[1,0,0,0]: "red_ml",
+                        [0,1,0,0]: "green_ml",
+                        [0,0,1,0]: "blue_ml",
+                        [0,0,0,1]: "dark_ml"}
+
 @router.post("/deliver/{order_id}")
 def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     """ """
     print(f"barrels delivered: {barrels_delivered} order_id: {order_id}")
+    
     insertion = """   INSERT INTO ledger 
                       (item, amount)
                       VALUES 
@@ -32,12 +38,14 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     with db.engine.begin() as connection:
         for barrel in barrels_delivered:
             connection.execute(sqlalchemy.text(insertion), 
-                           [{"ml_color": barrel.sku, "ml_amount": (barrel.ml_per_barrel * barrel.quantity),
+                           [{"ml_color": potion_type_to_color[barrel.potion_type[0], barrel.potion_type[1], barrel.potion_type[2], barrel.potion_type[3]], 
+                             "ml_amount": (barrel.ml_per_barrel * barrel.quantity),
                              "gold": "gold", "gold_amount": -(barrel.price * barrel.quantity)}])
             
     return "OK"
 
 # Gets called once a day big juice!!!!!!
+
 @router.post("/plan")
 def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """ """
@@ -72,7 +80,6 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                                         GROUP BY ml_color, item) AS totals
                                         RIGHT JOIN barrel_minmax ON totals.ml_color = barrel_minmax.name
                                         ORDER BY amount DESC""")
-    
     
     plan = []
     with db.engine.begin() as connection:
