@@ -114,13 +114,12 @@ class CartItem(BaseModel):
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     """ """
-    """ INSERT INTO cart_items (cart_id, quantity, catalog_id) 
-        SELECT :cart_id, :quantity, catalog.id 
-        FROM catalog WHERE catalog.sku = :item_sku """
+    cart_items_insertion = """ INSERT INTO cart_items (cart_id, qty, item_sku) 
+    SELECT :cart_id, :qty, potions.sku 
+    FROM potions WHERE potions.sku = :sku """
         
     with db.engine.begin() as connection:
-        connection.execute(sqlalchemy.text(
-            "INSERT INTO cart_items (cart_id, item_sku, qty) VALUES (:cart_id, :sku, :qty)"), 
+        connection.execute(sqlalchemy.text(cart_items_insertion), 
             [{"cart_id": cart_id, "sku": item_sku, "qty": cart_item.quantity}])
         
     return "OK"
@@ -132,35 +131,37 @@ class CartCheckout(BaseModel):
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
+    insertion = """ INSERT INTO ledger 
+                    (item, amount)
+                    VALUES 
+                    (:potion, :potion_amount),
+                    (:gold, :gold_amount) """
+
+    get_cart = """ SELECT cart_items.item_sku as pot, cart_items.qty as amount, potions.gold
+                   FROM cart_items
+                   JOIN potions ON cart_items.item_sku = potions.sku
+                   WHERE cart_items.cart_id = :cart_id """    
+    
     totalPots = 0
     totalGold = 0
+    
+    with db.engine.begin() as connection:
+        cart_list = connection.execute(sqlalchemy.text(get_cart), {"cart_id": cart_id})
+        
+        ledger_insert = []
+    
+        for item in cart_list:
+            ledger_insert.append({
+                "potion": item.pot,
+                "potion_amount": -item.amount,
+                "gold": "gold",
+                "gold_amount": (item.gold * item.amount)
+            })
+            totalPots += item.amount
+            totalGold += (item.gold * item.amount)
 
     with db.engine.begin() as connection:
-        potions = connection.execute(sqlalchemy.text("SELECT sku FROM potions"))
-        
-        items = connection.execute(sqlalchemy.text("SELECT item_sku,  FROM cart_items WHERE cart_id = :cart_id"),
-                                   [{"cart_id": cart_id}])
-        for potion in potions:
-            for item in items:
-                if item.item_sku == potion.sku:
-                    """ insert potion and amount """
-                    connection.execute(sqlalchemy.text("""   INSERT INTO ledger 
-                                                             (item, amount)
-                                                             VALUES 
-                                                             (:potion, :potion_amount),
-                                                             (:gold, :gold_amount) """),
-                                       [{"potion": "potion_name", "potion_amount": "potion amount",
-                                         "gold": "gold", "gold_amount": -"potion_price* potion_amount"}])
-                    
-                    connection.execute(sqlalchemy.text("UPDATE potions SET qty = potions.qty - :qty WHERE potions.sku = :potions_sku"),
-                                       [{"qty": item.qty, "potions_sku": item.item_sku}])
-                    
-                    """ insert gold and amount """
-                    connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold = global_inventory.gold + :pot_gold"),
-                                       [{"pot_gold": potion.gold * item.qty}])
-                    
-                    totalPots += item.qty
-                    totalGold += potion.gold * item.qty                   
-
-        
+            connection.execute(sqlalchemy.text(insertion), ledger_insert)
+    
+    
     return {"total_potions_bought": totalPots, "total_gold_paid": totalGold}

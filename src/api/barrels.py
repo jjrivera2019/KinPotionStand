@@ -19,10 +19,10 @@ class Barrel(BaseModel):
 
     quantity: int
 
-potion_type_to_color = {[1,0,0,0]: "red_ml",
-                        [0,1,0,0]: "green_ml",
-                        [0,0,1,0]: "blue_ml",
-                        [0,0,0,1]: "dark_ml"}
+potion_type_to_color = {(1,0,0,0): "red_ml",
+                        (0,1,0,0): "green_ml",
+                        (0,0,1,0): "blue_ml",
+                        (0,0,0,1): "dark_ml"}
 
 @router.post("/deliver/{order_id}")
 def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
@@ -34,13 +34,18 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
                       VALUES 
                       (:ml_color, :ml_amount),
                       (:gold, :gold_amount) """
-              
+    
+    ledger_insert = []
+    for barrel in barrels_delivered:
+        ledger_insert.append({
+            "ml_color": potion_type_to_color[(barrel.potion_type[0], barrel.potion_type[1], barrel.potion_type[2], barrel.potion_type[3])],
+            "ml_amount": (barrel.ml_per_barrel * barrel.quantity),
+            "gold": "gold",
+            "gold_amount": -(barrel.price * barrel.quantity)
+        })
+
     with db.engine.begin() as connection:
-        for barrel in barrels_delivered:
-            connection.execute(sqlalchemy.text(insertion), 
-                           [{"ml_color": potion_type_to_color[barrel.potion_type[0], barrel.potion_type[1], barrel.potion_type[2], barrel.potion_type[3]], 
-                             "ml_amount": (barrel.ml_per_barrel * barrel.quantity),
-                             "gold": "gold", "gold_amount": -(barrel.price * barrel.quantity)}])
+            connection.execute(sqlalchemy.text(insertion), ledger_insert)
             
     return "OK"
 
@@ -91,7 +96,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                 if ((barrel.potion_type == [totals.red, totals.green, totals.blue, totals.dark]) and
                    (totals.amount < totals.min) and 
                    (totals.sku == barrel.sku) and
-                   barrel.quantity > 0 and (curr_gold > barrel.price * totals.num_barrels_to_buy)):
+                   barrel.quantity > 0 and (curr_gold >= barrel.price * totals.num_barrels_to_buy)):
                     
                     curr_gold -= barrel.price * totals.num_barrels_to_buy
                     plan.append({
