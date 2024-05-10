@@ -117,7 +117,6 @@ def get_bottle_plan():
                                         FROM red_ml, green_ml, blue_ml, dark_ml, gold""")
 
     plan = []
-    
     with db.engine.begin() as connection:
         tot_pots = connection.execute(sqlalchemy.text(total_pots))
         

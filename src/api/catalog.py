@@ -20,8 +20,7 @@ def get_catalog():
                                                     potions.green,
                                                     potions.blue,
                                                     potions.dark,
-                                                    potions.gold,
-                                                    potions.buy
+                                                    potions.gold
                                                     FROM
                                                     (
                                                         SELECT
