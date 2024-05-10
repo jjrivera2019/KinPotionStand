@@ -68,10 +68,13 @@ def get_capacity_plan():
     Start with 1 capacity for 50 potions and 1 capacity for 10000 ml of potion. Each additional 
     capacity unit costs 1000 gold.
     """
-
+    pot_cap = 0
+    ml_cap = 0
+    
+    
     return {
-        "potion_capacity": 0,
-        "ml_capacity": 0
+        "potion_capacity": pot_cap,
+        "ml_capacity": ml_cap
         }
 
 class CapacityPurchase(BaseModel):
