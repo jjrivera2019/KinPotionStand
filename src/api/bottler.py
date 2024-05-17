@@ -142,7 +142,6 @@ def get_bottle_plan():
                     currBlue >= (pots.blue * pots.buy) and
                     currDark >= (pots.dark * pots.buy)
                 ):
-                    
                     currRed -= (pots.red * pots.buy)
                     currGreen -= (pots.green * pots.buy)
                     currBlue -= (pots.blue * pots.buy)
@@ -151,7 +150,7 @@ def get_bottle_plan():
                     plan.append({
                     "potion_type": [pots.red, pots.green, pots.blue, pots.dark],
                     "quantity": pots.buy})
-                    
+
     return plan
 
 if __name__ == "__main__":

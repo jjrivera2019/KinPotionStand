@@ -28,9 +28,9 @@ def get_catalog():
                                                             WHEN item IN ('red') THEN 'red'
                                                             WHEN item IN ('green') THEN 'green'
                                                             WHEN item IN ('blue') THEN 'blue'
-                                                            WHEN item IN ('cyan') THEN 'cyan'
                                                             WHEN item IN ('white') THEN 'white'
                                                             WHEN item IN ('purple') THEN 'purple'
+                                                            WHEN item IN ('yellow') THEN 'yellow'
                                                             ELSE 'other sums'
                                                         END AS pot,
                                                         item,
