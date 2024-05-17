@@ -53,7 +53,6 @@ def search_orders(
     Your results must be paginated, the max results you can return at any
     time is 5 total line items.
     """
-
     return {
         "previous": "",
         "next": "",
@@ -67,7 +66,6 @@ def search_orders(
             }
         ],
     }
-
 
 class Customer(BaseModel):
     customer_name: str

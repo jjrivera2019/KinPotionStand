@@ -59,33 +59,40 @@ def get_bottle_plan():
     # Expressed in integers from 1 to 100 that must sum up to 100.
 
     # Initial logic: bottle all barrels into red potions.
-    total_pots = """ SELECT 
-                    potions.sku,
-                    COALESCE(totals.amount, 0) as amount,
-                    potions.pot_min,
-                    potions.pot_max,
-                    potions.red,
-                    potions.green,
-                    potions.blue,
-                    potions.dark,
-                    potions.buy
-                    FROM
-                    (SELECT
-                        CASE
-                        WHEN item IN ('red') THEN 'red'
-                        WHEN item IN ('green') THEN 'green'
-                        WHEN item IN ('blue') THEN 'blue'
-                        WHEN item IN ('cyan') THEN 'cyan'
-                        WHEN item IN ('white') THEN 'white'
-                        WHEN item IN ('purple') THEN 'purple'
-                        ELSE 'other sums'
-                        END AS pot,
-                        item,
-                        COALESCE(SUM(amount), 0) AS amount
-                    FROM ledger
-                    GROUP BY pot, item) as totals
-                    RIGHT JOIN potions ON totals.pot = potions.sku
-                    ORDER BY amount ASC """
+    total_pots = """ SELECT
+                        potions.sku,
+                        potions.potions_id,
+                        COALESCE(totals.amount, 0) as amount,
+                        potions.pot_min,
+                        potions.pot_max,
+                        potions.red,
+                        potions.green,
+                        potions.blue,
+                        potions.dark,
+                        potions.buy
+                        FROM
+                        (
+                            SELECT
+                            CASE
+                                WHEN item IN ('red') THEN 'red'
+                                WHEN item IN ('green') THEN 'green'
+                                WHEN item IN ('blue') THEN 'blue'
+                                WHEN item IN ('cyan') THEN 'cyan'
+                                WHEN item IN ('white') THEN 'white'
+                                WHEN item IN ('purple') THEN 'purple'
+                                ELSE 'other sums'
+                            END AS pot,
+                            item,
+                            COALESCE(SUM(amount), 0) AS amount
+                            FROM
+                            ledger
+                            GROUP BY
+                            pot,
+                            item
+                        ) as totals
+                        RIGHT JOIN potions ON totals.pot = potions.sku
+                        ORDER BY
+                        amount, potions_id ASC """
     
     goldMl_inventory = sqlalchemy.text("""with red_ml as (
                                         SELECT COALESCE(SUM(amount), 0) as red_ml
@@ -123,16 +130,28 @@ def get_bottle_plan():
         inventory= connection.execute(goldMl_inventory)
         
         for items in inventory:
+            currRed = items.red_ml
+            currGreen = items.green_ml
+            currBlue = items.blue_ml
+            currDark = items.dark_ml
+            
             for pots in tot_pots:
                 if (pots.amount < pots.pot_min and 
-                    items.red_ml >= (pots.red * pots.buy) and
-                    items.green_ml >= (pots.green * pots.buy) and
-                    items.blue_ml >= (pots.blue * pots.buy) and
-                    items.dark_ml >= (pots.dark * pots.buy)
+                    currRed >= (pots.red * pots.buy) and
+                    currGreen >= (pots.green * pots.buy) and
+                    currBlue >= (pots.blue * pots.buy) and
+                    currDark >= (pots.dark * pots.buy)
                 ):
+                    
+                    currRed -= (pots.red * pots.buy)
+                    currGreen -= (pots.green * pots.buy)
+                    currBlue -= (pots.blue * pots.buy)
+                    currDark -= (pots.dark * pots.buy)
+                    
                     plan.append({
                     "potion_type": [pots.red, pots.green, pots.blue, pots.dark],
                     "quantity": pots.buy})
+                    
     return plan
 
 if __name__ == "__main__":
