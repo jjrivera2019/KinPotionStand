@@ -25,7 +25,7 @@ def get_inventory():
                                             or item = 'green'
                                             or item = 'blue'
                                             or item = 'white'
-                                            or item = 'cyan'
+                                            or item = 'yellow'
                                             or item = 'purple'
                                         ),
                                         ml as (
@@ -51,8 +51,8 @@ def get_inventory():
                                         *
                                         from
                                         potions,
-                                        ml, gold
-                                    """)
+                                        ml, gold""")
+    
     with db.engine.begin() as connection:
         inventory = connection.execute(sql_statement)
         for stuff in inventory:
@@ -68,10 +68,20 @@ def get_capacity_plan():
     Start with 1 capacity for 50 potions and 1 capacity for 10000 ml of potion. Each additional 
     capacity unit costs 1000 gold.
     """
+    
     pot_cap = 0
     ml_cap = 0
     
-    
+    """ with db.engine.begin() as connection:
+        inventory = connection.execute(sql_statement)
+        for stuff in inventory: 
+            if(((stuff.potions - (stuff.potcap * 50)) > ((stuff.potcap * 50) * .8) or
+               (stuff.ml - (stuff.mlcap * 10000)) > ((stuff.mlcap * 10000)* .2)) and 
+               (stuff.gold - 1000 == 1000)
+               ):
+                pot_cap = 50
+                ml_cap = 10000 """
+             
     return {
         "potion_capacity": pot_cap,
         "ml_capacity": ml_cap
@@ -88,5 +98,7 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
     Start with 1 capacity for 50 potions and 1 capacity for 10000 ml of potion. Each additional 
     capacity unit costs 1000 gold.
     """
+    
+    
 
     return "OK"

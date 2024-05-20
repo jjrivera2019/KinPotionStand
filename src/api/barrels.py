@@ -61,32 +61,40 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """)
     
     ml_inventory = sqlalchemy.text("""SELECT
-                                        COALESCE(totals.amount, 0) as amount,
-                                        barrel_minmax.name,
-                                        barrel_minmax.sku,
-                                        barrel_minmax.red,
-                                        barrel_minmax.green,
-                                        barrel_minmax.blue,
-                                        barrel_minmax.dark,
-                                        barrel_minmax.min,
-                                        barrel_minmax.max,
-                                        barrel_minmax.num_barrels_to_buy
-                                        FROM
-                                        (SELECT 
-                                            CASE 
-                                            WHEN item IN ('red_ml') THEN 'red_ml'
-                                            WHEN item IN ('green_ml') THEN 'green_ml'
-                                            WHEN item IN ('blue_ml') THEN 'blue_ml'
-                                            ELSE 'other sums' 
-                                            END AS ml_color,
-                                            item,
-                                            COALESCE(SUM(amount), 0) AS amount
-                                        FROM ledger
-                                        GROUP BY ml_color, item) AS totals
-                                        RIGHT JOIN barrel_minmax ON totals.ml_color = barrel_minmax.name
-                                        ORDER BY amount DESC""")
+  COALESCE(totals.amount, 0) as amount,
+  barrel_minmax.name,
+  barrel_minmax.sku,
+  barrel_minmax.red,
+  barrel_minmax.green,
+  barrel_minmax.blue,
+  barrel_minmax.dark,
+  barrel_minmax.min,
+  barrel_minmax.max,
+  barrel_minmax.num_barrels_to_buy
+FROM
+  (
+    SELECT
+      CASE
+        WHEN item IN ('red_ml') THEN 'red_ml'
+        WHEN item IN ('green_ml') THEN 'green_ml'
+        WHEN item IN ('blue_ml') THEN 'blue_ml'
+        ELSE 'other sums'
+      END AS ml_color,
+      item,
+      COALESCE(SUM(amount), 0) AS amount
+    FROM
+      ledger
+    GROUP BY
+      ml_color,
+      item
+  ) AS totals
+  RIGHT JOIN barrel_minmax ON totals.ml_color = barrel_minmax.name
+WHERE name = 'red_ml' or name = 'green_ml' or name = 'blue_ml'
+ORDER BY
+  amount ASC""")
     
     plan = []
+    
     with db.engine.begin() as connection:
         curr_gold = connection.execute(gold_inventory).scalar()
         ml_totals = connection.execute(ml_inventory)
@@ -94,14 +102,24 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         for totals in ml_totals:
             for barrel in wholesale_catalog:
                 if ((barrel.potion_type == [totals.red, totals.green, totals.blue, totals.dark]) and
-                   (totals.amount < totals.min) and 
-                   (totals.sku == barrel.sku) and
-                   barrel.quantity > 0 and (curr_gold >= barrel.price * totals.num_barrels_to_buy)):
+                    (totals.amount < totals.min) and 
+                    (totals.sku == barrel.sku) and
+                     barrel.quantity > 0 and (curr_gold >= barrel.price * totals.num_barrels_to_buy)):
                     
-                    curr_gold -= barrel.price * totals.num_barrels_to_buy
+                    newamount = totals.amount
+                    barrels_to_buy = 0
+                    
+                    while (newamount + barrel.ml_per_barrel < totals.max and
+                           curr_gold >barrel.price and 
+                           barrel.quantity >= barrels_to_buy + 1):
+                        
+                        newamount += barrel.ml_per_barrel
+                        barrels_to_buy += 1
+                        curr_gold -= barrel.price 
+                        
                     plan.append({
                             "sku": barrel.sku,
-                            "quantity": totals.num_barrels_to_buy
+                            "quantity": barrels_to_buy
                     })
     return plan
 
