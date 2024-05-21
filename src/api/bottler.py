@@ -136,20 +136,29 @@ def get_bottle_plan():
             currDark = items.dark_ml
             
             for pots in tot_pots:
-                if (pots.amount < pots.pot_min and 
-                    currRed >= (pots.red * pots.buy) and
-                    currGreen >= (pots.green * pots.buy) and
-                    currBlue >= (pots.blue * pots.buy) and
-                    currDark >= (pots.dark * pots.buy)
-                ):
-                    currRed -= (pots.red * pots.buy)
-                    currGreen -= (pots.green * pots.buy)
-                    currBlue -= (pots.blue * pots.buy)
-                    currDark -= (pots.dark * pots.buy)
+                if (pots.amount <= pots.pot_min and 
+                   (currRed >= (pots.red)) and 
+                   (currGreen >= (pots.green)) and 
+                   (currBlue >= (pots.blue)) and 
+                   (currDark >= (pots.dark))):
+                    
+                    pots_qty = 1
+                    while((currRed >= (pots.red * pots_qty)) and 
+                          (currGreen >= (pots.green * pots_qty)) and 
+                          (currBlue >= (pots.blue * pots_qty)) and 
+                          (currDark >= (pots.dark * pots_qty)) and 
+                          (pots.pot_max > pots_qty)):
+                    
+                            pots_qty += 1
+                
+                    currRed -= (pots.red * pots_qty) 
+                    currGreen -= (pots.green * pots_qty) 
+                    currBlue -= (pots.blue * pots_qty) 
+                    currDark -= (pots.dark * pots_qty) 
                     
                     plan.append({
                     "potion_type": [pots.red, pots.green, pots.blue, pots.dark],
-                    "quantity": pots.buy})
+                    "quantity": pots_qty})
 
     return plan
 

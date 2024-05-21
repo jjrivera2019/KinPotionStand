@@ -110,7 +110,7 @@ ORDER BY
                     barrels_to_buy = 0
                     
                     while (newamount + barrel.ml_per_barrel < totals.max and
-                           curr_gold >barrel.price and 
+                           curr_gold > barrel.price and 
                            barrel.quantity >= barrels_to_buy + 1):
                         
                         newamount += barrel.ml_per_barrel
