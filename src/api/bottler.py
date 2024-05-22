@@ -77,7 +77,7 @@ def get_bottle_plan():
                                 WHEN item IN ('red') THEN 'red'
                                 WHEN item IN ('green') THEN 'green'
                                 WHEN item IN ('blue') THEN 'blue'
-                                WHEN item IN ('cyan') THEN 'cyan'
+                                WHEN item IN ('yellow') THEN 'yellow'
                                 WHEN item IN ('white') THEN 'white'
                                 WHEN item IN ('purple') THEN 'purple'
                                 ELSE 'other sums'
@@ -142,19 +142,19 @@ def get_bottle_plan():
                    (currBlue >= (pots.blue)) and 
                    (currDark >= (pots.dark))):
                     
-                    pots_qty = 1
-                    while((currRed >= (pots.red * pots_qty)) and 
-                          (currGreen >= (pots.green * pots_qty)) and 
-                          (currBlue >= (pots.blue * pots_qty)) and 
-                          (currDark >= (pots.dark * pots_qty)) and 
+                    pots_qty = 0
+                    while((currRed >= (pots.red)) and 
+                          (currGreen >= (pots.green)) and 
+                          (currBlue >= (pots.blue)) and 
+                          (currDark >= (pots.dark)) and 
                           (pots.pot_max > pots_qty)):
-                    
-                            pots_qty += 1
+                        currRed -= (pots.red) 
+                        currGreen -= (pots.green) 
+                        currBlue -= (pots.blue) 
+                        currDark -= (pots.dark) 
+                        pots_qty += 1
                 
-                    currRed -= (pots.red * pots_qty) 
-                    currGreen -= (pots.green * pots_qty) 
-                    currBlue -= (pots.blue * pots_qty) 
-                    currDark -= (pots.dark * pots_qty) 
+
                     
                     plan.append({
                     "potion_type": [pots.red, pots.green, pots.blue, pots.dark],
