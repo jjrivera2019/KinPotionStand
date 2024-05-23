@@ -147,15 +147,14 @@ def get_bottle_plan():
                           (currGreen >= (pots.green)) and 
                           (currBlue >= (pots.blue)) and 
                           (currDark >= (pots.dark)) and 
-                          (pots.pot_max > pots_qty)):
+                          (pots.pot_max > pots_qty + 1)):
+                          
                         currRed -= (pots.red) 
                         currGreen -= (pots.green) 
                         currBlue -= (pots.blue) 
                         currDark -= (pots.dark) 
                         pots_qty += 1
                 
-
-                    
                     plan.append({
                     "potion_type": [pots.red, pots.green, pots.blue, pots.dark],
                     "quantity": pots_qty})
