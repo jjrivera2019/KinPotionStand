@@ -142,12 +142,12 @@ def get_bottle_plan():
                    (currBlue >= (pots.blue)) and 
                    (currDark >= (pots.dark))):
                     
-                    pots_qty = 0
+                    pots_qty = pots.amount
                     while((currRed >= (pots.red)) and 
                           (currGreen >= (pots.green)) and 
                           (currBlue >= (pots.blue)) and 
                           (currDark >= (pots.dark)) and 
-                          (pots.pot_max > pots_qty + 1)):
+                          (pots.pot_max > pots_qty)):
                           
                         currRed -= (pots.red) 
                         currGreen -= (pots.green) 
